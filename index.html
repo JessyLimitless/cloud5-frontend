@@ -616,8 +616,8 @@
 // ============================================
 
 // ⚠️ TODO: 배포 시 실제 백엔드 URL로 변경
-const API_BASE = 'https://PLACEHOLDER_BACKEND_URL';
-// 로컬: const API_BASE = 'http://localhost:4000';
+// const API_BASE = 'https://PLACEHOLDER_BACKEND_URL';
+const API_BASE = 'http://localhost:4000';
 
 let allServices = [];
 let currentAppId = null;
@@ -684,10 +684,13 @@ async function loadServices() {
 
     try {
         const res = await fetch(`${API_BASE}/projects`);
+        if (!res.ok) throw new Error(`Server error (${res.status})`);
         allServices = await res.json();
+        if (!Array.isArray(allServices)) { allServices = []; }
         renderProjectCards();
         renderServiceTable(allServices);
     } catch (e) {
+        allServices = [];
         container.innerHTML = `<div class="empty" style="color:var(--danger);">❌ Failed to load: ${e.message}</div>`;
     }
 }
@@ -887,7 +890,8 @@ function extractLogText(data) {
 async function actionStop() {
     if (!getKey()) return alert('Access Key를 입력하세요.');
     try {
-        await fetch(`${API_BASE}/projects/${currentAppId}/stop`, { method:'POST', headers: headers() });
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}/stop`, { method:'POST', headers: headers() });
+        if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
         openDetail(currentAppId);
     } catch (e) { alert('Stop failed: ' + e.message); }
 }
@@ -895,7 +899,8 @@ async function actionStop() {
 async function actionStart() {
     if (!getKey()) return alert('Access Key를 입력하세요.');
     try {
-        await fetch(`${API_BASE}/projects/${currentAppId}/start`, { method:'POST', headers: headers() });
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}/start`, { method:'POST', headers: headers() });
+        if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
         openDetail(currentAppId);
     } catch (e) { alert('Start failed: ' + e.message); }
 }
@@ -904,7 +909,8 @@ async function actionRedeploy() {
     if (!getKey()) return alert('Access Key를 입력하세요.');
     if (!confirm('Redeploy this service?')) return;
     try {
-        await fetch(`${API_BASE}/projects/${currentAppId}/redeploy`, { method:'POST', headers: headers() });
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}/redeploy`, { method:'POST', headers: headers() });
+        if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
         openDetail(currentAppId);
     } catch (e) { alert('Redeploy failed: ' + e.message); }
 }
@@ -913,7 +919,8 @@ async function actionDelete() {
     if (!getKey()) return alert('Access Key를 입력하세요.');
     if (!confirm(`Delete "${currentService?.repo_name}"? This cannot be undone.`)) return;
     try {
-        await fetch(`${API_BASE}/projects/${currentAppId}`, { method:'DELETE', headers: headers() });
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}`, { method:'DELETE', headers: headers() });
+        if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
         navigateTo('overview');
     } catch (e) { alert('Delete failed: ' + e.message); }
 }
@@ -923,16 +930,23 @@ async function saveEnvVars() {
     if (!getKey()) return alert('Access Key를 입력하세요.');
     const env = document.getElementById('envEditor').value;
     try {
-        await fetch(`${API_BASE}/projects/${currentAppId}/env`, {
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}/env`, {
             method:'PUT', headers: headers(), body: JSON.stringify({ env })
         });
+        if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
         alert('Environment variables saved.');
     } catch (e) { alert('Save failed: ' + e.message); }
 }
 
 async function saveEnvAndRedeploy() {
     await saveEnvVars();
-    await actionRedeploy();
+    if (confirm('Redeploy with new environment?')) {
+        try {
+            const res = await fetch(`${API_BASE}/projects/${currentAppId}/redeploy`, { method:'POST', headers: headers() });
+            if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
+            openDetail(currentAppId);
+        } catch (e) { alert('Redeploy failed: ' + e.message); }
+    }
 }
 
 // ============================================
