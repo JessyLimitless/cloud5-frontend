@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud5 - Dashboard</title>
+    <style>
+        /* ============================================
+           Render 스타일 대시보드 CSS
+           ============================================ */
+        :root {
+            --bg: #f6f8fa;
+            --sidebar: #ffffff;
+            --card: #ffffff;
+            --border: #e1e4e8;
+            --primary: #6c5ce7;
+            --primary-light: #a29bfe;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #d63031;
+            --text: #2d3436;
+            --text-secondary: #636e72;
+            --text-light: #b2bec3;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* --- 사이드바 (Render 좌측 네비) --- */
+        .sidebar {
+            width: 220px;
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            padding: 0 20px 20px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+
+        .sidebar-section {
+            padding: 8px 20px 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-item {
+            padding: 9px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-item:hover { background: #f8f9fa; color: var(--text); }
+        .sidebar-item.active {
+            background: #f0eeff;
+            color: var(--primary);
+            border-left-color: var(--primary);
+            font-weight: 500;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* --- 메인 콘텐츠 --- */
+        .main {
+            margin-left: 220px;
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        /* 상단 바 */
+        .topbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .topbar-title { font-size: 18px; font-weight: 600; }
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+        /* 콘텐츠 영역 */
+        .content { padding: 28px 32px; }
+
+        /* --- 버튼 --- */
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background: white;
+            color: var(--text);
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { border-color: #ccc; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover { background: #5b4cdb; }
+        .btn-danger { color: var(--danger); border-color: var(--danger); }
+        .btn-danger:hover { background: #fff5f5; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* --- 프로젝트 카드 (Render의 Projects 영역) --- */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .project-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .project-card:hover { border-color: var(--primary-light); box-shadow: 0 2px 8px rgba(108,92,231,0.1); }
+        .project-card-name { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .project-card-status { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+
+        .create-card {
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: transparent;
+            min-height: 90px;
+        }
+        .create-card:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* --- 서비스 테이블 (Render의 Ungrouped Services) --- */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .section-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .section-tab {
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .section-tab.active { background: #e8e5ff; color: var(--primary); font-weight: 500; }
+
+        .service-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .service-table th {
+            text-align: left;
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            background: #fafbfc;
+        }
+        .service-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .service-table tr:last-child td { border-bottom: none; }
+        .service-table tr:hover td { background: #f8f9fa; }
+        .service-name {
+            font-weight: 500;
+            color: var(--primary);
+            cursor: pointer;
+        }
+        .service-name:hover { text-decoration: underline; }
+
+        /* --- 상태 뱃지 --- */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-live { background: #e6f9f0; color: #00875a; }
+        .badge-deploying { background: #fff8e6; color: #b88600; }
+        .badge-stopped { background: #ffe6e6; color: #cc0000; }
+        .badge-error { background: #ffe6e6; color: #cc0000; }
+        .badge-unknown { background: #f0f0f0; color: #666; }
+        .badge-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-live { background: var(--success); }
+        .dot-deploying { background: var(--warning); }
+        .dot-stopped { background: var(--danger); }
+        .dot-error { background: var(--danger); }
+        .dot-unknown { background: #999; }
+
+        /* --- 서비스 상세 페이지 --- */
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .detail-back {
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .detail-back:hover { color: var(--primary); }
+        .detail-name { font-size: 22px; font-weight: 600; }
+        .detail-url {
+            margin: 12px 0 20px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .detail-url a { color: var(--primary); text-decoration: none; }
+        .detail-url a:hover { text-decoration: underline; }
+
+        .detail-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .detail-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        .detail-tab:hover { color: var(--text); }
+        .detail-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+        .detail-panel { display: none; }
+        .detail-panel.active { display: block; }
+
+        /* --- 로그 뷰어 --- */
+        .log-viewer {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* --- 새 배포 모달 --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            width: 520px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal h2 { font-size: 20px; margin-bottom: 20px; }
+        .modal .form-group { margin-bottom: 16px; }
+        .modal label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .modal input:focus, .modal select:focus { outline: none; border-color: var(--primary); }
+        .modal .help { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+        /* --- 환경변수 에디터 --- */
+        .env-editor {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            resize: vertical;
+        }
+
+        /* --- 빈 상태 --- */
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* --- 반응형 --- */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .content { padding: 16px; }
+            .projects-grid { grid-template-columns: 1fr; }
+        }
+
+        /* --- 로딩 --- */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- 검색 --- */
+        .search-input {
+            width: 100%;
+            padding: 9px 14px 9px 36px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23b2bec3' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") no-repeat 12px center;
+            margin-bottom: 16px;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<!-- ============================================
+     사이드바 (Render 좌측 메뉴)
+     ============================================ -->
+<aside class="sidebar">
+    <div class="sidebar-logo">☁️ Cloud5</div>
+
+    <div class="sidebar-section">Dashboard</div>
+    <div class="sidebar-item active" data-page="overview" onclick="navigateTo('overview')">
+        📊 Projects
+    </div>
+
+    <div class="sidebar-section">Integrations</div>
+    <div class="sidebar-item" data-page="webhooks" onclick="navigateTo('webhooks')">
+        🔗 Webhooks
+    </div>
+
+    <div class="sidebar-section">Workspace</div>
+    <div class="sidebar-item" data-page="settings" onclick="navigateTo('settings')">
+        ⚙️ Settings
+    </div>
+
+    <div class="sidebar-bottom">
+        <div style="font-size:12px;color:var(--text-light);">Cloud5 v2.0</div>
+    </div>
+</aside>
+
+<!-- ============================================
+     메인 콘텐츠
+     ============================================ -->
+<div class="main">
+
+    <!-- 상단 바 -->
+    <div class="topbar">
+        <div class="topbar-title" id="pageTitle">Overview</div>
+        <div class="topbar-actions">
+            <input type="password" id="accessKeyInput" placeholder="🔑 Access Key"
+                   style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:180px;">
+            <button class="btn btn-primary" onclick="showNewServiceModal()">+ New</button>
+        </div>
+    </div>
+
+    <!-- 콘텐츠 영역 -->
+    <div class="content">
+
+        <!-- ===== 페이지: Overview (Render 메인 화면) ===== -->
+        <div id="page-overview" class="page active">
+
+            <!-- 프로젝트 카드 섹션 -->
+            <div style="margin-bottom:28px;">
+                <h2 style="font-size:16px;font-weight:600;margin-bottom:14px;">Projects</h2>
+                <div class="projects-grid" id="projectCards">
+                    <div class="project-card create-card" onclick="showNewServiceModal()">
+                        + Create new project
+                    </div>
+                </div>
+            </div>
+
+            <!-- 서비스 테이블 섹션 (Render의 Ungrouped Services) -->
+            <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <h2 class="section-title">Services</h2>
+                    <button class="btn btn-sm" onclick="loadServices()">🔄 Refresh</button>
+                </div>
+                <div class="section-tabs" id="statusTabs">
+                    <span class="section-tab active" onclick="filterServices('all', this)">All</span>
+                    <span class="section-tab" onclick="filterServices('active', this)">Active</span>
+                    <span class="section-tab" onclick="filterServices('stopped', this)">Stopped</span>
+                </div>
+                <input type="text" class="search-input" placeholder="Search services" id="searchInput" oninput="filterBySearch()">
+
+                <div id="serviceTableContainer">
+                    <div class="empty">
+                        <div class="empty-icon">📦</div>
+                        <p>No services yet.</p>
+                        <p style="font-size:13px;margin-top:8px;">Click "+ New" to deploy your first service.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 페이지: 서비스 상세 (Render 서비스 클릭 시) ===== -->
+        <div id="page-detail" class="page" style="display:none;">
+            <div class="detail-back" onclick="navigateTo('overview')">← Back to Overview</div>
+
+            <div class="detail-header">
+                <div>
+                    <div class="detail-name" id="detailName">-</div>
+                    <div id="detailBadge" style="margin-top:8px;"></div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn" id="btnRedeploy" onclick="actionRedeploy()">🔄 Redeploy</button>
+                    <button class="btn" id="btnToggle" onclick="actionToggle()">⏹ Stop</button>
+                    <button class="btn btn-danger" onclick="actionDelete()">🗑 Delete</button>
+                </div>
+            </div>
+
+            <div class="detail-url" id="detailUrl"></div>
+
+            <!-- 상세 탭 (Render: Events / Logs / Environment / Settings) -->
+            <div class="detail-tabs">
+                <div class="detail-tab active" onclick="switchDetailTab('events', this)">Events</div>
+                <div class="detail-tab" onclick="switchDetailTab('logs', this)">Logs</div>
+                <div class="detail-tab" onclick="switchDetailTab('env', this)">Environment</div>
+                <div class="detail-tab" onclick="switchDetailTab('info', this)">Info</div>
+            </div>
+
+            <!-- Events 탭 -->
+            <div id="panel-events" class="detail-panel active">
+                <h3 style="font-size:15px;margin-bottom:12px;">Deploy Logs</h3>
+                <div class="log-viewer" id="deployLogs">Loading...</div>
+            </div>
+
+            <!-- Runtime Logs 탭 -->
+            <div id="panel-logs" class="detail-panel">
+                <h3 style="font-size:15px;margin-bottom:12px;">Runtime Logs</h3>
+                <div style="margin-bottom:10px;">
+                    <button class="btn btn-sm" onclick="loadRuntimeLogs()">🔄 Refresh logs</button>
+                </div>
+                <div class="log-viewer" id="runtimeLogs">Loading...</div>
+            </div>
+
+            <!-- Environment 탭 -->
+            <div id="panel-env" class="detail-panel">
+                <h3 style="font-size:15px;margin-bottom:8px;">Environment Variables</h3>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                    KEY=value 형식으로 한 줄에 하나씩 입력하세요. 저장 후 재배포해야 적용됩니다.
+                </p>
+                <textarea class="env-editor" id="envEditor" placeholder="NODE_ENV=production&#10;PORT=3000"></textarea>
+                <div style="margin-top:10px;display:flex;gap:8px;">
+                    <button class="btn btn-primary" onclick="saveEnvVars()">Save</button>
+                    <button class="btn" onclick="saveEnvAndRedeploy()">Save & Redeploy</button>
+                </div>
+            </div>
+
+            <!-- Info 탭 -->
+            <div id="panel-info" class="detail-panel">
+                <h3 style="font-size:15px;margin-bottom:12px;">Service Information</h3>
+                <div id="serviceInfo" style="font-size:14px;line-height:2;"></div>
+            </div>
+        </div>
+
+        <!-- ===== 페이지: Webhooks ===== -->
+        <div id="page-webhooks" class="page" style="display:none;">
+            <h2 style="font-size:18px;margin-bottom:16px;">GitHub Webhook</h2>
+            <p style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">
+                아래 URL을 GitHub 레포의 Webhook으로 등록하면 push 시 자동 재배포됩니다.
+            </p>
+            <div style="background:#f8f9fa;padding:14px;border-radius:8px;font-family:monospace;font-size:14px;" id="webhookUrl">
+                Loading...
+            </div>
+            <p style="margin-top:12px;font-size:13px;color:var(--text-light);">
+                Content type: application/json · Events: Just the push event
+            </p>
+        </div>
+
+        <!-- ===== 페이지: Settings ===== -->
+        <div id="page-settings" class="page" style="display:none;">
+            <h2 style="font-size:18px;margin-bottom:16px;">Settings</h2>
+            <div class="form-group" style="max-width:400px;">
+                <label style="font-size:13px;font-weight:500;margin-bottom:6px;display:block;">Access Key</label>
+                <input type="password" id="settingsKey" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;">
+                <p style="font-size:12px;color:var(--text-light);margin-top:4px;">
+                    배포 및 서비스 관리에 필요한 인증 키
+                </p>
+            </div>
+        </div>
+
+    </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ============================================
+     새 서비스 생성 모달
+     ============================================ -->
+<div class="modal-overlay" id="newServiceModal">
+    <div class="modal">
+        <h2>🚀 New Web Service</h2>
+
+        <div class="form-group">
+            <label>GitHub Repository URL *</label>
+            <input type="text" id="modalRepo" placeholder="https://github.com/username/repository">
+            <div class="help">Public 또는 Private 레포 모두 가능</div>
+        </div>
+
+        <div class="form-group">
+            <label>Email (배포 결과 알림) *</label>
+            <input type="email" id="modalEmail" placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+            <label>Service Name (선택)</label>
+            <input type="text" id="modalName" placeholder="자동: 리포지토리 이름 사용">
+            <div class="help">서브도메인으로 사용됩니다: [name].deployme.socialbrain.co.kr</div>
+        </div>
+
+        <div class="form-group">
+            <label>Runtime</label>
+            <select id="modalRuntime" disabled>
+                <option value="nixpacks">Auto Detect (nixpacks)</option>
+            </select>
+            <div class="help">Node.js, Python 등을 자동으로 감지합니다</div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" id="modalDeployBtn" onclick="submitDeploy()">Create Web Service</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     JavaScript
+     ============================================ -->
+<script>
+// ============================================
+// 설정
+// ============================================
+
+// ⚠️ TODO: 배포 시 실제 백엔드 URL로 변경
+const API_BASE = 'https://PLACEHOLDER_BACKEND_URL';
+// 로컬: const API_BASE = 'http://localhost:4000';
+
+let allServices = [];
+let currentAppId = null;
+let currentService = null;
+let currentFilter = 'all';
+
+// Access Key
+function getKey() {
+    return document.getElementById('accessKeyInput').value ||
+           document.getElementById('settingsKey').value ||
+           localStorage.getItem('cloud5_key') || '';
+}
+function headers() {
+    return { 'Content-Type': 'application/json', 'x-access-key': getKey() };
+}
+
+// Access Key 저장
+document.getElementById('accessKeyInput').addEventListener('change', e => {
+    localStorage.setItem('cloud5_key', e.target.value);
+    document.getElementById('settingsKey').value = e.target.value;
+});
+document.getElementById('settingsKey').addEventListener('change', e => {
+    localStorage.setItem('cloud5_key', e.target.value);
+    document.getElementById('accessKeyInput').value = e.target.value;
+});
+
+// 초기 복원
+const savedKey = localStorage.getItem('cloud5_key');
+if (savedKey) {
+    document.getElementById('accessKeyInput').value = savedKey;
+    document.getElementById('settingsKey').value = savedKey;
+}
+
+// ============================================
+// 네비게이션
+// ============================================
+
+function navigateTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+
+    const el = document.getElementById(`page-${page}`);
+    if (el) el.style.display = 'block';
+
+    const nav = document.querySelector(`.sidebar-item[data-page="${page}"]`);
+    if (nav) nav.classList.add('active');
+
+    const titles = { overview: 'Overview', webhooks: 'Webhooks', settings: 'Settings', detail: '' };
+    document.getElementById('pageTitle').textContent = titles[page] || '';
+
+    if (page === 'overview') loadServices();
+    if (page === 'webhooks') {
+        document.getElementById('webhookUrl').textContent = `${API_BASE}/webhook/github`;
+    }
+}
+
+// ============================================
+// 서비스 목록 (Render Overview)
+// ============================================
+
+async function loadServices() {
+    const container = document.getElementById('serviceTableContainer');
+    container.innerHTML = '<div style="text-align:center;padding:40px;"><span class="spinner"></span> Loading...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/projects`);
+        allServices = await res.json();
+        renderProjectCards();
+        renderServiceTable(allServices);
+    } catch (e) {
+        container.innerHTML = `<div class="empty" style="color:var(--danger);">❌ Failed to load: ${e.message}</div>`;
+    }
+}
+
+function renderProjectCards() {
+    const grid = document.getElementById('projectCards');
+    const running = allServices.filter(s => ['running','done','deploying'].includes(s.live_status || s.status));
+    const stopped = allServices.filter(s => !['running','done','deploying'].includes(s.live_status || s.status));
+
+    let html = '';
+    if (allServices.length > 0) {
+        const statusText = running.length === allServices.length
+            ? '✅ All services are up and running'
+            : `${running.length} active, ${stopped.length} inactive`;
+
+        html += `
+            <div class="project-card" onclick="navigateTo('overview')">
+                <div class="project-card-name">Cloud5 Services</div>
+                <div class="project-card-status">${statusText}</div>
+            </div>`;
+    }
+    html += '<div class="project-card create-card" onclick="showNewServiceModal()">+ Create new project</div>';
+    grid.innerHTML = html;
+}
+
+function renderServiceTable(services) {
+    const container = document.getElementById('serviceTableContainer');
+    if (!services.length) {
+        container.innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>No services found.</p></div>';
+        return;
+    }
+
+    const rows = services.map(s => {
+        const st = s.live_status || s.status || 'unknown';
+        return `<tr onclick="openDetail('${s.application_id}')">
+            <td><span class="service-name">${s.repo_name}</span></td>
+            <td>${makeBadge(st)}</td>
+            <td style="color:var(--text-secondary);font-size:13px;">${s.build_type || 'nixpacks'}</td>
+            <td style="color:var(--text-secondary);font-size:13px;">${timeAgo(s.updated_at)}</td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+        <table class="service-table">
+            <thead><tr><th>SERVICE NAME</th><th>STATUS</th><th>RUNTIME</th><th>UPDATED</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+}
+
+function makeBadge(status) {
+    const map = {
+        running: ['live','Live'], done: ['live','Deployed'], deploying: ['deploying','Building'],
+        idle: ['deploying','Idle'], stopped: ['stopped','Stopped'], error: ['error','Error']
+    };
+    const [cls, label] = map[status] || ['unknown', status];
+    return `<span class="badge badge-${cls}"><span class="badge-dot dot-${cls}"></span>${label}</span>`;
+}
+
+function timeAgo(dateStr) {
+    if (!dateStr) return '-';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs/24)}d ago`;
+}
+
+// 필터
+function filterServices(type, el) {
+    currentFilter = type;
+    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    let filtered = allServices;
+    if (type === 'active') filtered = allServices.filter(s => ['running','done','deploying'].includes(s.live_status || s.status));
+    if (type === 'stopped') filtered = allServices.filter(s => ['stopped','error'].includes(s.live_status || s.status));
+
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    if (q) filtered = filtered.filter(s => s.repo_name.toLowerCase().includes(q));
+
+    renderServiceTable(filtered);
+    // 탭 카운트 업데이트
+    updateTabCounts();
+}
+
+function filterBySearch() { filterServices(currentFilter); }
+
+function updateTabCounts() {
+    const tabs = document.getElementById('statusTabs');
+    const active = allServices.filter(s => ['running','done','deploying'].includes(s.live_status || s.status)).length;
+    const stopped = allServices.filter(s => ['stopped','error'].includes(s.live_status || s.status)).length;
+    tabs.innerHTML = `
+        <span class="section-tab ${currentFilter==='all'?'active':''}" onclick="filterServices('all',this)">All (${allServices.length})</span>
+        <span class="section-tab ${currentFilter==='active'?'active':''}" onclick="filterServices('active',this)">Active (${active})</span>
+        <span class="section-tab ${currentFilter==='stopped'?'active':''}" onclick="filterServices('stopped',this)">Stopped (${stopped})</span>`;
+}
+
+// ============================================
+// 서비스 상세 (Render 서비스 클릭)
+// ============================================
+
+async function openDetail(appId) {
+    currentAppId = appId;
+    navigateTo('detail');
+    document.getElementById('pageTitle').textContent = '';
+
+    try {
+        const res = await fetch(`${API_BASE}/projects/${appId}`);
+        currentService = await res.json();
+        renderDetail();
+        loadDeployLogs();
+    } catch (e) {
+        document.getElementById('detailName').textContent = 'Error loading service';
+    }
+}
+
+function renderDetail() {
+    const s = currentService;
+    const st = s.live_status || s.status || 'unknown';
+
+    document.getElementById('detailName').textContent = s.repo_name;
+    document.getElementById('detailBadge').innerHTML = makeBadge(st);
+
+    const url = s.deploy_url || `https://${s.subdomain}.${location.hostname}`;
+    document.getElementById('detailUrl').innerHTML = `🌐 <a href="${url}" target="_blank">${url}</a>`;
+
+    // Stop/Start 토글
+    const btn = document.getElementById('btnToggle');
+    if (st === 'running' || st === 'done') {
+        btn.textContent = '⏹ Stop';
+        btn.onclick = () => actionStop();
+    } else {
+        btn.textContent = '▶ Start';
+        btn.onclick = () => actionStart();
+    }
+
+    // Info 탭
+    document.getElementById('serviceInfo').innerHTML = `
+        <div><strong>Repository:</strong> <a href="${s.repo_url}" target="_blank" style="color:var(--primary);">${s.repo_url}</a></div>
+        <div><strong>Service Name:</strong> ${s.repo_name}</div>
+        <div><strong>Subdomain:</strong> ${s.subdomain || '-'}</div>
+        <div><strong>Application ID:</strong> <code>${s.application_id}</code></div>
+        <div><strong>Build Type:</strong> ${s.build_type || 'nixpacks'}</div>
+        <div><strong>Email:</strong> ${s.email}</div>
+        <div><strong>Auto Deploy:</strong> ${s.auto_deploy ? '✅ Enabled' : '❌ Disabled'}</div>
+        <div><strong>Created:</strong> ${new Date(s.created_at).toLocaleString('ko-KR')}</div>
+        <div><strong>Updated:</strong> ${new Date(s.updated_at).toLocaleString('ko-KR')}</div>`;
+}
+
+function switchDetailTab(tab, el) {
+    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(`panel-${tab}`).classList.add('active');
+
+    if (tab === 'logs') loadRuntimeLogs();
+    if (tab === 'events') loadDeployLogs();
+}
+
+// ============================================
+// 로그
+// ============================================
+
+async function loadDeployLogs() {
+    const el = document.getElementById('deployLogs');
+    el.textContent = 'Loading deploy logs...';
+    try {
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}/logs`);
+        const data = await res.json();
+        el.textContent = extractLogText(data) || 'No deploy logs available.';
+    } catch (e) { el.textContent = `Error: ${e.message}`; }
+}
+
+async function loadRuntimeLogs() {
+    const el = document.getElementById('runtimeLogs');
+    el.textContent = 'Loading runtime logs...';
+    try {
+        const res = await fetch(`${API_BASE}/projects/${currentAppId}/app-logs`);
+        const data = await res.json();
+        el.textContent = extractLogText(data) || 'No runtime logs available.';
+    } catch (e) { el.textContent = `Error: ${e.message}`; }
+}
+
+function extractLogText(data) {
+    if (typeof data === 'string') return data;
+    if (data.logs) return data.logs;
+    if (Array.isArray(data.data)) return data.data.map(l => l.message || l).join('\n');
+    return JSON.stringify(data, null, 2);
+}
+
+// ============================================
+// 서비스 액션
+// ============================================
+
+async function actionStop() {
+    if (!getKey()) return alert('Access Key를 입력하세요.');
+    try {
+        await fetch(`${API_BASE}/projects/${currentAppId}/stop`, { method:'POST', headers: headers() });
+        openDetail(currentAppId);
+    } catch (e) { alert('Stop failed: ' + e.message); }
+}
+
+async function actionStart() {
+    if (!getKey()) return alert('Access Key를 입력하세요.');
+    try {
+        await fetch(`${API_BASE}/projects/${currentAppId}/start`, { method:'POST', headers: headers() });
+        openDetail(currentAppId);
+    } catch (e) { alert('Start failed: ' + e.message); }
+}
+
+async function actionRedeploy() {
+    if (!getKey()) return alert('Access Key를 입력하세요.');
+    if (!confirm('Redeploy this service?')) return;
+    try {
+        await fetch(`${API_BASE}/projects/${currentAppId}/redeploy`, { method:'POST', headers: headers() });
+        openDetail(currentAppId);
+    } catch (e) { alert('Redeploy failed: ' + e.message); }
+}
+
+async function actionDelete() {
+    if (!getKey()) return alert('Access Key를 입력하세요.');
+    if (!confirm(`Delete "${currentService?.repo_name}"? This cannot be undone.`)) return;
+    try {
+        await fetch(`${API_BASE}/projects/${currentAppId}`, { method:'DELETE', headers: headers() });
+        navigateTo('overview');
+    } catch (e) { alert('Delete failed: ' + e.message); }
+}
+
+// 환경변수
+async function saveEnvVars() {
+    if (!getKey()) return alert('Access Key를 입력하세요.');
+    const env = document.getElementById('envEditor').value;
+    try {
+        await fetch(`${API_BASE}/projects/${currentAppId}/env`, {
+            method:'PUT', headers: headers(), body: JSON.stringify({ env })
+        });
+        alert('Environment variables saved.');
+    } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+async function saveEnvAndRedeploy() {
+    await saveEnvVars();
+    await actionRedeploy();
+}
+
+// ============================================
+// 새 서비스 배포 모달
+// ============================================
+
+function showNewServiceModal() { document.getElementById('newServiceModal').classList.add('show'); }
+function closeModal() { document.getElementById('newServiceModal').classList.remove('show'); }
+
+async function submitDeploy() {
+    const repoUrl = document.getElementById('modalRepo').value;
+    const email = document.getElementById('modalEmail').value;
+    const folderName = document.getElementById('modalName').value;
+
+    if (!repoUrl || !email) return alert('Repository URL과 Email은 필수입니다.');
+    if (!getKey()) return alert('Access Key를 먼저 입력하세요.');
+
+    const btn = document.getElementById('modalDeployBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="border-top-color:white;border-color:rgba(255,255,255,0.3);"></span> Creating...';
+
+    try {
+        const res = await fetch(`${API_BASE}/deploy`, {
+            method: 'POST',
+            headers: headers(),
+            body: JSON.stringify({ repoUrl, email, folderName })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            closeModal();
+            document.getElementById('modalRepo').value = '';
+            document.getElementById('modalEmail').value = '';
+            document.getElementById('modalName').value = '';
+            // 생성된 서비스 상세로 이동
+            openDetail(data.applicationId);
+        } else {
+            alert('Deploy failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Web Service';
+    }
+}
+
+// 모달 외부 클릭으로 닫기
+document.getElementById('newServiceModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// ============================================
+// 초기화
+// ============================================
+loadServices();
+</script>
+
+</body>
+</html>
